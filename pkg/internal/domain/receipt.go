@@ -2,7 +2,6 @@ package domain
 
 import "fmt"
 
-// PersonCalc может быть получен из файла (расчет либо квитанция) в облаке либо собранным из апи ручек и джобы
 type PersonCalc struct {
 	PlaceNumber int
 	FullName    string

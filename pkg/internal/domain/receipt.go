@@ -1,7 +1,5 @@
 package domain
 
-import "fmt"
-
 type PersonCalc struct {
 	PlaceNumber int
 	FullName    string
@@ -41,41 +39,55 @@ type TariffCalc struct {
 	Step3Arithmetic float64
 }
 
-func NewPersonCalc(u User, t Tariff, current, prev Indication) PersonCalc {
+func NewPersonCalc(
+	placeNumber int,
+	FullName string,
+	Summ, Balance, Payment, Debt float64,
+	TariffName string,
+	CurrentInd, LastInd, DifValue float64,
+	Ratio int,
+	Step1Calc, Step2Calc, Step3Calc float64,
+	Step1Price, Step2Price, Step3Price float64,
+	Step1Arithmetic, Step2Arithmetic, Step3Arithmetic float64,
+) PersonCalc {
 	p := PersonCalc{
-		PlaceNumber: u.PlaceNumber,
-		FullName:    fmt.Sprintf("%s %s %s", u.FirstName, u.Name, u.LastName),
+		PlaceNumber: placeNumber,
+		FullName:    FullName,
+		Summ:        Summ,
+		Balance:     Balance,
+		Payment:     Payment,
+		Debt:        Debt,
 	}
 
-	switch u.Tariff {
-	case "mono":
+	switch TariffName {
+	case "Тариф 1":
 		p.Single = &SingleZone{
 			Tariff: TariffCalc{
-				TariffName: "Одноставочный",
-				CurrentInd: current.AllDayData,
-				LastInd:    prev.AllDayData,
-				Step1Price: t.FirstValue,
-				Step2Price: t.SecondValue,
-				Step3Price: t.ThirdValue,
+				TariffName: TariffName,
+				CurrentInd: CurrentInd,
+				LastInd:    LastInd,
+				Step1Price: Step1Price,
+				Step2Price: Step2Price,
+				Step3Price: Step3Price,
 			},
 		}
-	case "duo":
+	default:
 		p.Duo = &DuoCalc{
 			T1: TariffCalc{
-				TariffName: "Дневной Т1",
-				CurrentInd: current.AllDayData,
-				LastInd:    prev.AllDayData,
-				Step1Price: t.FirstValue,
-				Step2Price: t.SecondValue,
-				Step3Price: t.ThirdValue,
+				TariffName: TariffName,
+				CurrentInd: CurrentInd,
+				LastInd:    LastInd,
+				Step1Price: Step1Price,
+				Step2Price: Step2Price,
+				Step3Price: Step3Price,
 			},
 			T2: TariffCalc{
-				TariffName: "Ночной Т2",
-				CurrentInd: current.AllDayData,
-				LastInd:    prev.AllDayData,
-				Step1Price: t.FirstValue,
-				Step2Price: t.SecondValue,
-				Step3Price: t.ThirdValue,
+				TariffName: TariffName,
+				CurrentInd: CurrentInd,
+				LastInd:    LastInd,
+				Step1Price: Step1Price,
+				Step2Price: Step2Price,
+				Step3Price: Step3Price,
 			},
 		}
 	}

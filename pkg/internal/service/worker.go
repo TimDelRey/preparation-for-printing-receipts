@@ -8,36 +8,31 @@ import (
 )
 
 func run() {
-	// читаем файл
-	file, err := excelize.OpenFile("./work_doc_4.xlsx")
-	// file, err := excelize.OpenFile("work_doc_4.xlsx")
+	file, err := excelize.OpenFile("work_doc_4.xlsx")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			fmt.Println(err)
-		}
-	}()
-	// создаем новый
-	newFile := excelize.NewFile()
-	defer func() {
-		if err := newFile.Close(); err != nil {
-			fmt.Println(err)
-		}
-	}()
+	defer file.Close()
 
-	tariffCell, err := file.GetCellValue("Расчеты", "E10")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	for tariffCell != nil {
+	newFile := excelize.NewFile()
+	defer newFile.Close()
+
+	for {
+		tariffCell, err := file.GetCellValue("Расчеты", "E10")
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		if tariffCell == "" {
+			break
+		}
+
 		if err := fragmentationReceips(file, newFile, tariffCell); err != nil {
 			fmt.Println(err)
 		}
 	}
+
 	if err := newFile.SaveAs("Receipts.xlsx"); err != nil {
 		fmt.Println(err)
 	}
@@ -47,46 +42,33 @@ func fragmentationReceips(file, newFile *excelize.File, tariffCell string) error
 	receipt := domain.NewReceipt(file, tariffCell)
 	if _, err := newFile.NewSheet(receipt.FullName); err != nil {
 		fmt.Println(err)
-		return
 	}
 
-	switch receipt.TariffName {
+	switch receipt.Single.Tariff.TariffName {
 	case "Тариф 1":
-		err := sample.newSingleSample(newFile, receipt.FullName)
-		if err != nil {
-			fmt.Println(err)
-			return
+		if err := sample.NewSingleSample(newFile, receipt.FullName); err != nil {
+			return err
 		}
-		err := domain.printSingleReceipt(newFile, receipt)
-		if err != nil {
-			fmt.Println(err)
-			return
+		if err := domain.PrintSingleReceipt(newFile, receipt); err != nil {
+			return err
 		}
-		err := file.RemoveRow("Расчеты", 10)
-		if err != nil {
-			fmt.Println(err)
-			return
+		if err := file.RemoveRow("Расчеты", 10); err != nil {
+			return err
 		}
+		return nil
 	default:
-		err := sample.newDuoSample(newFile, receipt.FullName)
-		if err != nil {
-			fmt.Println(err)
-			return
+		if err := sample.NewDuoSample(newFile, receipt.FullName); err != nil {
+			return err
 		}
-		err := domain.printDuoReceipt(newFile, receipt)
-		if err != nil {
-			fmt.Println(err)
-			return
+		if err := domain.PrintDuoReceipt(newFile, receipt); err != nil {
+			return err
 		}
-		err := file.RemoveRow("Расчеты", 10)
-		if err != nil {
-			fmt.Println(err)
-			return
+		if err := file.RemoveRow("Расчеты", 10); err != nil {
+			return err
 		}
-		err := file.RemoveRow("Расчеты", 11)
-		if err != nil {
-			fmt.Println(err)
-			return
+		if err := file.RemoveRow("Расчеты", 11); err != nil {
+			return err
 		}
+		return nil
 	}
 }

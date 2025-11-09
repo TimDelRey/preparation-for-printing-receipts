@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func newSingleSample(f *excelize.File, sheet string) error {
+func NewSingleSample(f *excelize.File, sheet string) error {
 	page, err := f.NewSheet(sheet)
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func newSingleSample(f *excelize.File, sheet string) error {
 	return nil
 }
 
-func newDuoSample(f *excelize.File, sheet string) error {
+func NewDuoSample(f *excelize.File, sheet string) error {
 	page, err := f.NewSheet(sheet)
 	if err != nil {
 		return err

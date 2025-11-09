@@ -161,7 +161,7 @@ func cellRel(mainCell string, difCol, difRow int) string {
 	return newCell
 }
 
-func printSingleReceipt(f *excelize.File, r Receipt) error {
+func PrintSingleReceipt(f *excelize.File, r Receipt) error {
 	values := map[string]any{
 		"B7": r.PlaceNumber,
 		"C7": r.FullName,
@@ -192,7 +192,7 @@ func printSingleReceipt(f *excelize.File, r Receipt) error {
 	return nil
 }
 
-func printDuoReceipt(f *excelize.File, r Receipt) error {
+func PrintDuoReceipt(f *excelize.File, r Receipt) error {
 	values := map[string]any{
 		"B7": r.PlaceNumber,
 		"C7": r.FullName,

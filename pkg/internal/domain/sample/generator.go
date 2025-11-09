@@ -1,12 +1,12 @@
-package domain
+package sample
 
 import (
 	"github.com/xuri/excelize/v2"
 	"strings"
 )
 
-func newSingleSample(f *excelize.File, name, sheet string) error {
-	page, err := f.NewSheet(name)
+func newSingleSample(f *excelize.File, sheet string) error {
+	page, err := f.NewSheet(sheet)
 	if err != nil {
 		return err
 	}
@@ -35,8 +35,8 @@ func newSingleSample(f *excelize.File, name, sheet string) error {
 	return nil
 }
 
-func newDuoSample(f *excelize.File, name, sheet string) error {
-	page, err := f.NewSheet(name)
+func newDuoSample(f *excelize.File, sheet string) error {
+	page, err := f.NewSheet(sheet)
 	if err != nil {
 		return err
 	}

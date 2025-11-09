@@ -6,7 +6,7 @@ import (
 
 const (
 	tariffCell = "E10"
-	sheet      = "Расчеты"
+	sheet      = "Calc"
 )
 
 type Receipt struct {
@@ -48,8 +48,8 @@ type TariffCalc struct {
 	Step3Arithmetic string
 }
 
-func NewReceipt(file *excelize.File, tariff string) Receipt {
-	p := Receipt{}
+func NewReceipt(file *excelize.File, tariff string) *Receipt {
+	p := &Receipt{}
 
 	p.PlaceNumber, _ = file.GetCellValue(sheet, cellRel(tariffCell, -2, 0))
 	p.FullName, _ = file.GetCellValue(sheet, cellRel(tariffCell, -1, 0))
@@ -185,7 +185,7 @@ func PrintSingleReceipt(f *excelize.File, r Receipt) error {
 	}
 
 	for cell, val := range values {
-		if err := f.SetCellValue(sheet, cell, val); err != nil {
+		if err := f.SetCellValue(r.FullName, cell, val); err != nil {
 			return err
 		}
 	}
@@ -231,7 +231,7 @@ func PrintDuoReceipt(f *excelize.File, r Receipt) error {
 	}
 
 	for cell, val := range values {
-		if err := f.SetCellValue(sheet, cell, val); err != nil {
+		if err := f.SetCellValue(r.FullName, cell, val); err != nil {
 			return err
 		}
 	}

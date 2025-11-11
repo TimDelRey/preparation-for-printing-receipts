@@ -1,4 +1,4 @@
-module test
+module script_for_receipts
 
 go 1.24.4
 

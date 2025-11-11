@@ -88,15 +88,15 @@ func setSingleStyle(f *excelize.File, sheet string) error {
 	if err := setMainStyle(f, "B5", "T7", sheet); err != nil {
 		return err
 	}
-	if err := setLeftStyle(f, "B7", "D7", sheet); err != nil {
+	if err := setLeftStyle(f, "B7", "D7", sheet, 1); err != nil {
 		return err
 	}
 	// шапка
-	if err := setLeftStyle(f, "B1", "B4", sheet); err != nil {
+	if err := setLeftStyle(f, "B1", "U4", sheet, 0); err != nil {
 		return err
 	}
 	// подвал
-	if err := setLeftStyle(f, "B9", "B9", sheet); err != nil {
+	if err := setLeftStyle(f, "B9", "B9", sheet, 0); err != nil {
 		return err
 	}
 	if err := setValueStyle(f, "E7", "T7", sheet); err != nil {
@@ -105,35 +105,35 @@ func setSingleStyle(f *excelize.File, sheet string) error {
 	return nil
 }
 func setMainStyle(f *excelize.File, from, to, sheet string) error {
-	style, err := f.NewStyle(baseStyle(7, "center", true))
+	style, err := f.NewStyle(baseStyle(7, "center", true, 1))
 	if err != nil {
 		return err
 	}
 	return f.SetCellStyle(sheet, from, to, style)
 }
-func setLeftStyle(f *excelize.File, from, to, sheet string) error {
-	style, err := f.NewStyle(baseStyle(7, "left", false))
+func setLeftStyle(f *excelize.File, from, to, sheet string, border int) error {
+	style, err := f.NewStyle(baseStyle(7, "left", true, border))
 	if err != nil {
 		return err
 	}
 	return f.SetCellStyle(sheet, from, to, style)
 }
 func setValueStyle(f *excelize.File, from, to, sheet string) error {
-	style, err := f.NewStyle(baseStyle(7, "right", true))
+	style, err := f.NewStyle(baseStyle(7, "right", true, 1))
 	if err != nil {
 		return err
 	}
 	return f.SetCellStyle(sheet, from, to, style)
 }
-func baseStyle(fontSize float64, horizontal string, wrap bool) *excelize.Style {
+func baseStyle(fontSize float64, horizontal string, wrap bool, border int) *excelize.Style {
 	return &excelize.Style{
 		Border: []excelize.Border{
-			{Type: "left", Color: "000000", Style: 2},
-			{Type: "top", Color: "000000", Style: 2},
-			{Type: "bottom", Color: "000000", Style: 2},
-			{Type: "right", Color: "000000", Style: 2},
-			{Type: "horizontal", Color: "000000", Style: 1},
-			{Type: "vertical", Color: "000000", Style: 1},
+			{Type: "left", Color: "000000", Style: border},
+			{Type: "top", Color: "000000", Style: border},
+			{Type: "bottom", Color: "000000", Style: border},
+			{Type: "right", Color: "000000", Style: border},
+			{Type: "horizontal", Color: "000000", Style: border},
+			{Type: "vertical", Color: "000000", Style: border},
 		},
 		Font: &excelize.Font{
 			Family: "Arial",
@@ -176,15 +176,15 @@ func setDuoStyle(f *excelize.File, sheet string) error {
 	if err := setMainStyle(f, "B5", "U8", sheet); err != nil {
 		return err
 	}
-	if err := setLeftStyle(f, "B7", "D8", sheet); err != nil {
+	if err := setLeftStyle(f, "B7", "D8", sheet, 1); err != nil {
 		return err
 	}
 	// шапка
-	if err := setLeftStyle(f, "B1", "B4", sheet); err != nil {
+	if err := setLeftStyle(f, "B1", "U4", sheet, 0); err != nil {
 		return err
 	}
 	// подвал
-	if err := setLeftStyle(f, "B9", "B9", sheet); err != nil {
+	if err := setLeftStyle(f, "B9", "B9", sheet, 0); err != nil {
 		return err
 	}
 	if err := setRatioStyle(f, "H6", "H6", sheet); err != nil {
@@ -206,7 +206,7 @@ func setDuoStyle(f *excelize.File, sheet string) error {
 	return nil
 }
 func setRatioStyle(f *excelize.File, from, to, sheet string) error {
-	s := baseStyle(6, "center", true)
+	s := baseStyle(6, "center", true, 1)
 	s.Alignment.TextRotation = 90
 	style, err := f.NewStyle(s)
 	if err != nil {

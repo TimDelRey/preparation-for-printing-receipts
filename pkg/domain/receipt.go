@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"fmt"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -99,7 +100,7 @@ func NewReceipt(file *excelize.File, tariff string) *Receipt {
 		ratioT1, _ := file.GetCellValue(sheet, cellRel(tariffCell, 4, 0))
 		ratioT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 4, 1))
 
-		tariffNameT2, _ := file.GetCellValue(sheet, tariffCell)
+		tariffNameT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 0, 1))
 		currentIndT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 1, 1))
 		lastIndT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 2, 1))
 		difValueT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 3, 1))
@@ -183,11 +184,16 @@ func PrintSingleReceipt(f *excelize.File, r Receipt) error {
 		"S7": r.Payment,
 		"T7": r.Debt,
 	}
+	newSheet := fmt.Sprintf("%s-уч.%s", r.FullName, r.PlaceNumber)
 
 	for cell, val := range values {
-		if err := f.SetCellValue(r.FullName, cell, val); err != nil {
+		if err := f.SetCellValue(newSheet, cell, val); err != nil {
 			return err
 		}
+	}
+
+	if err := f.RemoveRow(newSheet, 8); err != nil {
+		return err
 	}
 	return nil
 }
@@ -229,9 +235,10 @@ func PrintDuoReceipt(f *excelize.File, r Receipt) error {
 		"T7": r.Payment,
 		"U7": r.Debt,
 	}
+	newSheet := fmt.Sprintf("%s-уч.%s", r.FullName, r.PlaceNumber)
 
 	for cell, val := range values {
-		if err := f.SetCellValue(r.FullName, cell, val); err != nil {
+		if err := f.SetCellValue(newSheet, cell, val); err != nil {
 			return err
 		}
 	}

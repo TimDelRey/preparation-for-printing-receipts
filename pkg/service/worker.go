@@ -21,6 +21,7 @@ func Run() error {
 	defer newFile.Close()
 
 	for {
+		// получение тарифа
 		tariffCell, err := file.GetCellValue(sheet, "E10")
 		if err != nil {
 			fmt.Println(err)
@@ -36,6 +37,12 @@ func Run() error {
 		}
 	}
 
+	// удаление стартового листа
+	if err := newFile.DeleteSheet("Sheet1"); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	if err := newFile.SaveAs("Receipts.xlsx"); err != nil {
 		fmt.Println(err)
 		return err
@@ -45,17 +52,21 @@ func Run() error {
 
 func fragmentationReceips(file, newFile *excelize.File, tariffCell string) error {
 	receipt := domain.NewReceipt(file, tariffCell)
-	index, err := newFile.NewSheet(receipt.FullName)
-	if err != nil {
-		fmt.Println(err)
-	}
-	file.SetActiveSheet(index)
+	newSheet := fmt.Sprintf("%s-уч.%s", receipt.FullName, receipt.PlaceNumber)
+	dateCell := "S1"
+	dateVal, _ := file.GetCellValue(sheet, "T1")
 
 	switch {
 	case receipt.Single != nil:
-		if err := sample.NewSingleSample(newFile, receipt.FullName); err != nil {
+
+		if err := sample.NewSingleSample(newFile, newSheet); err != nil {
 			return err
 		}
+
+		if err := newFile.SetCellValue(newSheet, dateCell, dateVal); err != nil {
+			return err
+		}
+
 		if err := domain.PrintSingleReceipt(newFile, *receipt); err != nil {
 			return err
 		}
@@ -64,16 +75,21 @@ func fragmentationReceips(file, newFile *excelize.File, tariffCell string) error
 		}
 		return nil
 	case receipt.Duo != nil:
-		if err := sample.NewDuoSample(newFile, receipt.FullName); err != nil {
+		if err := sample.NewDuoSample(newFile, newSheet); err != nil {
 			return err
 		}
+
+		if err := newFile.SetCellValue(newSheet, dateCell, dateVal); err != nil {
+			return err
+		}
+
 		if err := domain.PrintDuoReceipt(newFile, *receipt); err != nil {
 			return err
 		}
 		if err := file.RemoveRow(sheet, 10); err != nil {
 			return err
 		}
-		if err := file.RemoveRow(sheet, 11); err != nil {
+		if err := file.RemoveRow(sheet, 10); err != nil {
 			return err
 		}
 		return nil

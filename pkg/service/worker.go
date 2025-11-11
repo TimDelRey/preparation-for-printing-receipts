@@ -3,6 +3,8 @@ package service
 import (
 	"fmt"
 	"github.com/xuri/excelize/v2"
+	"os"
+	"path/filepath"
 	"script_for_receipts/pkg/domain"
 	"script_for_receipts/pkg/domain/sample"
 	"time"
@@ -11,7 +13,11 @@ import (
 const sheet = "Calc"
 
 func Run() error {
-	file, err := excelize.OpenFile("work_doc_4.xlsx")
+	exePath, _ := os.Executable()
+	exeDir := filepath.Dir(exePath)
+	xlsxPath := filepath.Join(exeDir, "work_doc_4.xlsx")
+
+	file, err := excelize.OpenFile(xlsxPath)
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -44,8 +50,9 @@ func Run() error {
 		return err
 	}
 
-	if err := newFile.SaveAs("Receipts.xlsx"); err != nil {
-		fmt.Println(err)
+	outPath := filepath.Join(exeDir, "Receipts.xlsx")
+	if err := newFile.SaveAs(outPath); err != nil {
+		fmt.Println("Failed to save Excel:", err)
 		return err
 	}
 	return nil

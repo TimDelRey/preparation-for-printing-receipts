@@ -5,6 +5,7 @@ import (
 	"github.com/xuri/excelize/v2"
 	"script_for_receipts/pkg/domain"
 	"script_for_receipts/pkg/domain/sample"
+	"time"
 )
 
 const sheet = "Calc"
@@ -56,41 +57,52 @@ func fragmentationReceips(file, newFile *excelize.File, tariffCell string) error
 	dateCell := "S1"
 	dateVal, _ := file.GetCellValue(sheet, "T1")
 
+	t, err := time.Parse("2006-01-02", dateVal)
+	if err != nil {
+		fmt.Println("не удалось распарсить дату:", dateVal)
+		t = time.Now()
+	}
+	months := []string{
+		"январь", "февраль", "март", "апрель", "май", "июнь",
+		"июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь",
+	}
+	formatted := fmt.Sprintf("%s.%d", months[int(t.Month())-1], t.Year())
+
 	switch {
 	case receipt.Single != nil:
 
 		if err := sample.NewSingleSample(newFile, newSheet); err != nil {
-			return err
+			fmt.Println("не удалось создать шаблон")
 		}
 
-		if err := newFile.SetCellValue(newSheet, dateCell, dateVal); err != nil {
-			return err
+		if err := newFile.SetCellValue(newSheet, dateCell, formatted); err != nil {
+			fmt.Println("не удалось установить дату")
 		}
 
 		if err := domain.PrintSingleReceipt(newFile, *receipt); err != nil {
-			return err
+			fmt.Println("не удалось распечатать стракт квитанции")
 		}
 		if err := file.RemoveRow(sheet, 10); err != nil {
-			return err
+			fmt.Println("не удалось  удалить квитанцию из рабочего документа")
 		}
 		return nil
 	case receipt.Duo != nil:
 		if err := sample.NewDuoSample(newFile, newSheet); err != nil {
-			return err
+			fmt.Println("не удалось создать шаблон")
 		}
 
-		if err := newFile.SetCellValue(newSheet, dateCell, dateVal); err != nil {
-			return err
+		if err := newFile.SetCellValue(newSheet, dateCell, formatted); err != nil {
+			fmt.Println("не удалось установить дату")
 		}
 
 		if err := domain.PrintDuoReceipt(newFile, *receipt); err != nil {
-			return err
+			fmt.Println("не удалось распечатать стракт квитанции")
 		}
 		if err := file.RemoveRow(sheet, 10); err != nil {
-			return err
+			fmt.Println("не удалось  удалить квитанцию из рабочего документа")
 		}
 		if err := file.RemoveRow(sheet, 10); err != nil {
-			return err
+			fmt.Println("не удалось  удалить квитанцию из рабочего документа")
 		}
 		return nil
 	default:

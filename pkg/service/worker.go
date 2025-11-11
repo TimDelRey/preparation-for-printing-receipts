@@ -74,11 +74,9 @@ func fragmentationReceips(file, newFile *excelize.File, tariffCell string) error
 		if err := sample.NewSingleSample(newFile, newSheet); err != nil {
 			fmt.Println("не удалось создать шаблон")
 		}
-
 		if err := newFile.SetCellValue(newSheet, dateCell, formatted); err != nil {
 			fmt.Println("не удалось установить дату")
 		}
-
 		if err := domain.PrintSingleReceipt(newFile, *receipt); err != nil {
 			fmt.Println("не удалось распечатать стракт квитанции")
 		}
@@ -90,11 +88,9 @@ func fragmentationReceips(file, newFile *excelize.File, tariffCell string) error
 		if err := sample.NewDuoSample(newFile, newSheet); err != nil {
 			fmt.Println("не удалось создать шаблон")
 		}
-
 		if err := newFile.SetCellValue(newSheet, dateCell, formatted); err != nil {
 			fmt.Println("не удалось установить дату")
 		}
-
 		if err := domain.PrintDuoReceipt(newFile, *receipt); err != nil {
 			fmt.Println("не удалось распечатать стракт квитанции")
 		}

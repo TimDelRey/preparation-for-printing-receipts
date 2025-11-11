@@ -32,6 +32,21 @@ func NewSingleSample(f *excelize.File, sheet string) error {
 	if err := setHeaders(f, CalcSingleHeaders, sheet); err != nil {
 		return err
 	}
+	// установка области печати
+	enable, zero := true, 0
+	if err := f.SetSheetProps(sheet, &excelize.SheetPropsOptions{
+		FitToPage: &enable,
+	}); err != nil {
+		return err
+	}
+	orientation := "landscape"
+	if err := f.SetPageLayout(sheet, &excelize.PageLayoutOptions{
+		Orientation: &orientation,
+		FitToHeight: &zero,
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -60,6 +75,20 @@ func NewDuoSample(f *excelize.File, sheet string) error {
 	}
 	// установка хедеров и подвала
 	if err := setHeaders(f, CalcDuoHeaders, sheet); err != nil {
+		return err
+	}
+	// установка области печати
+	enable, zero := true, 0
+	if err := f.SetSheetProps(sheet, &excelize.SheetPropsOptions{
+		FitToPage: &enable,
+	}); err != nil {
+		return err
+	}
+	orientation := "landscape"
+	if err := f.SetPageLayout(sheet, &excelize.PageLayoutOptions{
+		Orientation: &orientation,
+		FitToHeight: &zero,
+	}); err != nil {
 		return err
 	}
 	return nil

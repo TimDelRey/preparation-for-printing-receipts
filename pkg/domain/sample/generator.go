@@ -5,79 +5,82 @@ import (
 	"strings"
 )
 
+type Builder struct {
+	Headers     map[string]string
+	Widths      map[string]float64
+	ApplyStyle  func(*excelize.File, string) error
+	MergeValues map[string]string
+}
+
 func NewSingleSample(f *excelize.File, sheet string) error {
-	page, err := f.NewSheet(sheet)
-	if err != nil {
-		return err
-	}
-
-	f.SetActiveSheet(page)
-	// установка ширины ячеек
-	if err := setCellsWidth(f, calcSingleWidth, sheet); err != nil {
-		return err
-	}
-	// установка высоты ячеек
-	if err := setCellsHeight(f, calcHeight, sheet); err != nil {
-		return err
-	}
-	// установка шрифта, размера, отрисовка границ
-	if err := setSingleStyle(f, sheet); err != nil {
-		return err
-	}
-	// обьединение ячеек
-	if err := mergeCells(f, CalcSingleHeaders, sheet); err != nil {
-		return err
-	}
-	// установка хедеров и подвала
-	if err := setHeaders(f, CalcSingleHeaders, sheet); err != nil {
-		return err
-	}
-	// установка области печати
-	enable, zero := true, 0
-	if err := f.SetSheetProps(sheet, &excelize.SheetPropsOptions{
-		FitToPage: &enable,
-	}); err != nil {
-		return err
-	}
-	orientation := "landscape"
-	if err := f.SetPageLayout(sheet, &excelize.PageLayoutOptions{
-		Orientation: &orientation,
-		FitToHeight: &zero,
-	}); err != nil {
-		return err
-	}
-
-	return nil
+	return DefaultSingleBuilder().Build(f, sheet)
 }
 
 func NewDuoSample(f *excelize.File, sheet string) error {
+	return DefaultDuoBuilder().Build(f, sheet)
+}
+
+func DefaultSingleBuilder() Builder {
+	return Builder{
+		Headers:    CalcSingleHeaders,
+		Widths:     calcSingleWidth,
+		ApplyStyle: setSingleStyle,
+	}
+}
+
+func DefaultDuoBuilder() Builder {
+	return Builder{
+		Headers:    CalcDuoHeaders,
+		Widths:     CalcDuoWidth,
+		ApplyStyle: setDuoStyle,
+		MergeValues: map[string]string{
+			"B7:B8": "участок",
+			"C7:C8": "имя",
+			"R7:R8": "сумма",
+			"S7:S8": "баланс",
+			"T7:T8": "оплата",
+			"U7:U8": "к оплате",
+		},
+	}
+}
+
+func (b Builder) Build(f *excelize.File, sheet string) error {
 	page, err := f.NewSheet(sheet)
 	if err != nil {
 		return err
 	}
 
 	f.SetActiveSheet(page)
-	// установка ширины ячеек
-	if err := setCellsWidth(f, CalcDuoWidth, sheet); err != nil {
+	if err := setCellsWidth(f, b.Widths, sheet); err != nil {
 		return err
 	}
-	// установка высоты ячеек
 	if err := setCellsHeight(f, calcHeight, sheet); err != nil {
 		return err
 	}
-	// установка шрифта, размераотрисовка границ
-	if err := setDuoStyle(f, sheet); err != nil {
+	if err := b.ApplyStyle(f, sheet); err != nil {
 		return err
 	}
-	// обьединение ячеек
-	if err := mergeCells(f, CalcDuoHeaders, sheet); err != nil {
+	if err := mergeCells(f, b.Headers, sheet); err != nil {
 		return err
 	}
-	// установка хедеров и подвала
-	if err := setHeaders(f, CalcDuoHeaders, sheet); err != nil {
+	if err := setHeaders(f, b.Headers, sheet); err != nil {
 		return err
 	}
-	// установка области печати
+	if len(b.MergeValues) > 0 {
+		if err := mergeCells(f, b.MergeValues, sheet); err != nil {
+			return err
+		}
+		if err := setHeaders(f, b.MergeValues, sheet); err != nil {
+			return err
+		}
+	}
+	if err := setPageLayout(f, sheet); err != nil {
+		return err
+	}
+	return nil
+}
+
+func setPageLayout(f *excelize.File, sheet string) error {
 	enable, zero := true, 0
 	if err := f.SetSheetProps(sheet, &excelize.SheetPropsOptions{
 		FitToPage: &enable,
@@ -91,8 +94,8 @@ func NewDuoSample(f *excelize.File, sheet string) error {
 	}); err != nil {
 		return err
 	}
-	return nil
 
+	return nil
 }
 
 func setCellsWidth(f *excelize.File, w map[string]float64, sheet string) error {
@@ -133,6 +136,7 @@ func setSingleStyle(f *excelize.File, sheet string) error {
 	}
 	return nil
 }
+
 func setMainStyle(f *excelize.File, from, to, sheet string) error {
 	style, err := f.NewStyle(baseStyle(7, "center", true, 1))
 	if err != nil {
@@ -140,6 +144,7 @@ func setMainStyle(f *excelize.File, from, to, sheet string) error {
 	}
 	return f.SetCellStyle(sheet, from, to, style)
 }
+
 func setLeftStyle(f *excelize.File, from, to, sheet string, border int) error {
 	style, err := f.NewStyle(baseStyle(7, "left", true, border))
 	if err != nil {
@@ -147,6 +152,7 @@ func setLeftStyle(f *excelize.File, from, to, sheet string, border int) error {
 	}
 	return f.SetCellStyle(sheet, from, to, style)
 }
+
 func setValueStyle(f *excelize.File, from, to, sheet string) error {
 	style, err := f.NewStyle(baseStyle(7, "right", true, 1))
 	if err != nil {
@@ -154,6 +160,7 @@ func setValueStyle(f *excelize.File, from, to, sheet string) error {
 	}
 	return f.SetCellStyle(sheet, from, to, style)
 }
+
 func baseStyle(fontSize float64, horizontal string, wrap bool, border int) *excelize.Style {
 	return &excelize.Style{
 		Border: []excelize.Border{
@@ -175,6 +182,7 @@ func baseStyle(fontSize float64, horizontal string, wrap bool, border int) *exce
 		},
 	}
 }
+
 func mergeCells(f *excelize.File, h map[string]string, sheet string) error {
 	for i := range h {
 		if err := mergeCell(f, i, sheet); err != nil {
@@ -183,6 +191,7 @@ func mergeCells(f *excelize.File, h map[string]string, sheet string) error {
 	}
 	return nil
 }
+
 func mergeCell(f *excelize.File, in, sheet string) error {
 	parts := strings.Split(in, ":")
 	if len(parts) == 2 {
@@ -192,6 +201,7 @@ func mergeCell(f *excelize.File, in, sheet string) error {
 	}
 	return nil
 }
+
 func setHeaders(f *excelize.File, h map[string]string, sheet string) error {
 	for i, v := range h {
 		parts := strings.Split(i, ":")
@@ -201,6 +211,7 @@ func setHeaders(f *excelize.File, h map[string]string, sheet string) error {
 	}
 	return nil
 }
+
 func setDuoStyle(f *excelize.File, sheet string) error {
 	if err := setMainStyle(f, "B5", "U8", sheet); err != nil {
 		return err
@@ -222,18 +233,9 @@ func setDuoStyle(f *excelize.File, sheet string) error {
 	if err := setValueStyle(f, "E7", "U8", sheet); err != nil {
 		return err
 	}
-	if err := mergeCells(f, map[string]string{
-		"B7:B8": "участок",
-		"C7:C8": "имя",
-		"R7:R8": "сумма",
-		"S7:S8": "баланс",
-		"T7:T8": "оплата",
-		"U7:U8": "к оплате",
-	}, sheet); err != nil {
-		return err
-	}
 	return nil
 }
+
 func setRatioStyle(f *excelize.File, from, to, sheet string) error {
 	s := baseStyle(6, "center", true, 1)
 	s.Alignment.TextRotation = 90

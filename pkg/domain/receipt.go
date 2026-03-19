@@ -5,10 +5,28 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
-const (
-	tariffCell = "E10"
-	sheet      = "Calc"
-)
+type CellReader interface {
+	GetCellValue(sheet, cell string, opts ...excelize.Options) (string, error)
+}
+
+type CellWriter interface {
+	SetCellValue(sheet, cell string, value any) error
+	RemoveRow(sheet string, row int) error
+}
+
+type ReceiptLayout struct {
+	SheetName        string
+	BaseTariffCell   string
+	SingleTariffName string
+}
+
+func DefaultReceiptLayout() ReceiptLayout {
+	return ReceiptLayout{
+		SheetName:        "Calc",
+		BaseTariffCell:   "E10",
+		SingleTariffName: "Тариф 1",
+	}
+}
 
 type Receipt struct {
 	PlaceNumber string
@@ -49,111 +67,53 @@ type TariffCalc struct {
 	Step3Arithmetic string
 }
 
-func NewReceipt(file *excelize.File, tariff string) *Receipt {
-	p := &Receipt{}
-
-	p.PlaceNumber, _ = file.GetCellValue(sheet, cellRel(tariffCell, -2, 0))
-	p.FullName, _ = file.GetCellValue(sheet, cellRel(tariffCell, -1, 0))
-	p.Summ, _ = file.GetCellValue(sheet, cellRel(tariffCell, 14, 0))
-	p.Balance, _ = file.GetCellValue(sheet, cellRel(tariffCell, 15, 0))
-	p.Payment, _ = file.GetCellValue(sheet, cellRel(tariffCell, 16, 0))
-	p.Debt, _ = file.GetCellValue(sheet, cellRel(tariffCell, 17, 0))
-
-	tariffName, _ := file.GetCellValue(sheet, tariffCell)
-	currentInd, _ := file.GetCellValue(sheet, cellRel(tariffCell, 1, 0))
-	lastInd, _ := file.GetCellValue(sheet, cellRel(tariffCell, 2, 0))
-	difValue, _ := file.GetCellValue(sheet, cellRel(tariffCell, 3, 0))
-
-	step1Calc, _ := file.GetCellValue(sheet, cellRel(tariffCell, 5, 0))
-	step2Calc, _ := file.GetCellValue(sheet, cellRel(tariffCell, 6, 0))
-	step3Calc, _ := file.GetCellValue(sheet, cellRel(tariffCell, 7, 0))
-
-	step1Price, _ := file.GetCellValue(sheet, cellRel(tariffCell, 8, 0))
-	step2Price, _ := file.GetCellValue(sheet, cellRel(tariffCell, 9, 0))
-	step3Price, _ := file.GetCellValue(sheet, cellRel(tariffCell, 10, 0))
-
-	step1Arithmetic, _ := file.GetCellValue(sheet, cellRel(tariffCell, 11, 0))
-	step2Arithmetic, _ := file.GetCellValue(sheet, cellRel(tariffCell, 12, 0))
-	step3Arithmetic, _ := file.GetCellValue(sheet, cellRel(tariffCell, 13, 0))
+func NewReceipt(file CellReader, layout ReceiptLayout, tariff string) *Receipt {
+	p := &Receipt{
+		PlaceNumber: getCellValue(file, layout, -2, 0),
+		FullName:    getCellValue(file, layout, -1, 0),
+		Summ:        getCellValue(file, layout, 14, 0),
+		Balance:     getCellValue(file, layout, 15, 0),
+		Payment:     getCellValue(file, layout, 16, 0),
+		Debt:        getCellValue(file, layout, 17, 0),
+	}
 
 	switch tariff {
-	case "Тариф 1":
+	case layout.SingleTariffName:
 		p.Single = &SingleZone{
-			Tariff: TariffCalc{
-				TariffName:      tariffName,
-				CurrentInd:      currentInd,
-				LastInd:         lastInd,
-				DifValue:        difValue,
-				Step1Calc:       step1Calc,
-				Step2Calc:       step2Calc,
-				Step3Calc:       step3Calc,
-				Step1Price:      step1Price,
-				Step2Price:      step2Price,
-				Step3Price:      step3Price,
-				Step1Arithmetic: step1Arithmetic,
-				Step2Arithmetic: step2Arithmetic,
-				Step3Arithmetic: step3Arithmetic,
-			},
+			Tariff: newTariffCalc(file, layout, 0),
 		}
-
 	default:
-		ratioT1, _ := file.GetCellValue(sheet, cellRel(tariffCell, 4, 0))
-		ratioT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 4, 1))
-
-		tariffNameT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 0, 1))
-		currentIndT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 1, 1))
-		lastIndT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 2, 1))
-		difValueT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 3, 1))
-
-		step1CalcT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 5, 1))
-		step2CalcT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 6, 1))
-		step3CalcT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 7, 1))
-
-		step1PriceT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 8, 1))
-		step2PriceT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 9, 1))
-		step3PriceT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 10, 1))
-
-		step1ArithmeticT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 11, 1))
-		step2ArithmeticT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 12, 1))
-		step3ArithmeticT2, _ := file.GetCellValue(sheet, cellRel(tariffCell, 13, 1))
-
 		p.Duo = &DuoCalc{
-			T1: TariffCalc{
-				TariffName:      tariffName,
-				CurrentInd:      currentInd,
-				LastInd:         lastInd,
-				DifValue:        difValue,
-				Ratio:           ratioT1,
-				Step1Calc:       step1Calc,
-				Step2Calc:       step2Calc,
-				Step3Calc:       step3Calc,
-				Step1Price:      step1Price,
-				Step2Price:      step2Price,
-				Step3Price:      step3Price,
-				Step1Arithmetic: step1Arithmetic,
-				Step2Arithmetic: step2Arithmetic,
-				Step3Arithmetic: step3Arithmetic,
-			},
-			T2: TariffCalc{
-				TariffName:      tariffNameT2,
-				CurrentInd:      currentIndT2,
-				LastInd:         lastIndT2,
-				DifValue:        difValueT2,
-				Ratio:           ratioT2,
-				Step1Calc:       step1CalcT2,
-				Step2Calc:       step2CalcT2,
-				Step3Calc:       step3CalcT2,
-				Step1Price:      step1PriceT2,
-				Step2Price:      step2PriceT2,
-				Step3Price:      step3PriceT2,
-				Step1Arithmetic: step1ArithmeticT2,
-				Step2Arithmetic: step2ArithmeticT2,
-				Step3Arithmetic: step3ArithmeticT2,
-			},
+			T1: newTariffCalc(file, layout, 0),
+			T2: newTariffCalc(file, layout, 1),
 		}
 	}
 
 	return p
+}
+
+func newTariffCalc(file CellReader, layout ReceiptLayout, rowOffset int) TariffCalc {
+	return TariffCalc{
+		TariffName:      getCellValue(file, layout, 0, rowOffset),
+		CurrentInd:      getCellValue(file, layout, 1, rowOffset),
+		LastInd:         getCellValue(file, layout, 2, rowOffset),
+		DifValue:        getCellValue(file, layout, 3, rowOffset),
+		Ratio:           getCellValue(file, layout, 4, rowOffset),
+		Step1Calc:       getCellValue(file, layout, 5, rowOffset),
+		Step2Calc:       getCellValue(file, layout, 6, rowOffset),
+		Step3Calc:       getCellValue(file, layout, 7, rowOffset),
+		Step1Price:      getCellValue(file, layout, 8, rowOffset),
+		Step2Price:      getCellValue(file, layout, 9, rowOffset),
+		Step3Price:      getCellValue(file, layout, 10, rowOffset),
+		Step1Arithmetic: getCellValue(file, layout, 11, rowOffset),
+		Step2Arithmetic: getCellValue(file, layout, 12, rowOffset),
+		Step3Arithmetic: getCellValue(file, layout, 13, rowOffset),
+	}
+}
+
+func getCellValue(file CellReader, layout ReceiptLayout, difCol, difRow int) string {
+	value, _ := file.GetCellValue(layout.SheetName, cellRel(layout.BaseTariffCell, difCol, difRow))
+	return value
 }
 
 func cellRel(mainCell string, difCol, difRow int) string {
@@ -162,7 +122,11 @@ func cellRel(mainCell string, difCol, difRow int) string {
 	return newCell
 }
 
-func PrintSingleReceipt(f *excelize.File, r Receipt) error {
+func (r Receipt) SheetName() string {
+	return fmt.Sprintf("%s-уч.%s", r.FullName, r.PlaceNumber)
+}
+
+func PrintSingleReceipt(f CellWriter, r Receipt) error {
 	values := map[string]any{
 		"B7": r.PlaceNumber,
 		"C7": r.FullName,
@@ -184,21 +148,18 @@ func PrintSingleReceipt(f *excelize.File, r Receipt) error {
 		"S7": r.Payment,
 		"T7": r.Debt,
 	}
-	newSheet := fmt.Sprintf("%s-уч.%s", r.FullName, r.PlaceNumber)
 
-	for cell, val := range values {
-		if err := f.SetCellValue(newSheet, cell, val); err != nil {
-			return err
-		}
+	if err := fillSheet(f, r.SheetName(), values); err != nil {
+		return err
 	}
 
-	if err := f.RemoveRow(newSheet, 8); err != nil {
+	if err := f.RemoveRow(r.SheetName(), 8); err != nil {
 		return err
 	}
 	return nil
 }
 
-func PrintDuoReceipt(f *excelize.File, r Receipt) error {
+func PrintDuoReceipt(f CellWriter, r Receipt) error {
 	values := map[string]any{
 		"B7": r.PlaceNumber,
 		"C7": r.FullName,
@@ -235,10 +196,13 @@ func PrintDuoReceipt(f *excelize.File, r Receipt) error {
 		"T7": r.Payment,
 		"U7": r.Debt,
 	}
-	newSheet := fmt.Sprintf("%s-уч.%s", r.FullName, r.PlaceNumber)
 
+	return fillSheet(f, r.SheetName(), values)
+}
+
+func fillSheet(f CellWriter, sheet string, values map[string]any) error {
 	for cell, val := range values {
-		if err := f.SetCellValue(newSheet, cell, val); err != nil {
+		if err := f.SetCellValue(sheet, cell, val); err != nil {
 			return err
 		}
 	}

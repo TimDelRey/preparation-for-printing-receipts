@@ -62,4 +62,34 @@ func TestRun_GeneratesReceiptsWorkbook(t *testing.T) {
 	if placeNumber == "" {
 		t.Fatal("generated receipt does not contain place number in B7")
 	}
+
+	sourceFile, err := excelize.OpenFile(inputPath)
+	if err != nil {
+		t.Fatalf("open source workbook: %v", err)
+	}
+	defer sourceFile.Close()
+
+	sourceHeader, err := sourceFile.GetCellValue("Архив", "B94")
+	if err != nil {
+		t.Fatalf("read source header: %v", err)
+	}
+	resultHeader, err := resultFile.GetCellValue(sheets[0], "B1")
+	if err != nil {
+		t.Fatalf("read generated header: %v", err)
+	}
+	if resultHeader != sourceHeader {
+		t.Fatalf("generated header = %q, want %q", resultHeader, sourceHeader)
+	}
+
+	sourceFooter, err := sourceFile.GetCellValue("Архив", "B87")
+	if err != nil {
+		t.Fatalf("read source footer: %v", err)
+	}
+	resultFooter, err := resultFile.GetCellValue(sheets[0], "B9")
+	if err != nil {
+		t.Fatalf("read generated footer: %v", err)
+	}
+	if resultFooter != sourceFooter {
+		t.Fatal("generated footer does not match source archive footer")
+	}
 }

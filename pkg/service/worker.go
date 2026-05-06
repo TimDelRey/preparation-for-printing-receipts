@@ -2,12 +2,14 @@ package service
 
 import (
 	"fmt"
-	"github.com/xuri/excelize/v2"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/xuri/excelize/v2"
+
 	"script_for_receipts/pkg/domain"
 	"script_for_receipts/pkg/domain/sample"
-	"time"
 )
 
 const sheet = "Calc"
@@ -27,6 +29,12 @@ func Run() error {
 	newFile := excelize.NewFile()
 	defer newFile.Close()
 
+	receiptText, err := sample.ReadReceiptText(file)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	for {
 		// получение тарифа
 		tariffCell, err := file.GetCellValue(sheet, "E10")
@@ -38,7 +46,7 @@ func Run() error {
 			break
 		}
 
-		if err := fragmentationReceips(file, newFile, tariffCell); err != nil {
+		if err := fragmentationReceips(file, newFile, tariffCell, receiptText); err != nil {
 			fmt.Println(err)
 			return err
 		}
@@ -58,7 +66,7 @@ func Run() error {
 	return nil
 }
 
-func fragmentationReceips(file, newFile *excelize.File, tariffCell string) error {
+func fragmentationReceips(file, newFile *excelize.File, tariffCell string, receiptText sample.ReceiptText) error {
 	receipt := domain.NewReceipt(file, tariffCell)
 	newSheet := fmt.Sprintf("%s-уч.%s", receipt.FullName, receipt.PlaceNumber)
 	dateCell := "S1"
@@ -78,7 +86,7 @@ func fragmentationReceips(file, newFile *excelize.File, tariffCell string) error
 	switch {
 	case receipt.Single != nil:
 
-		if err := sample.NewSingleSample(newFile, newSheet); err != nil {
+		if err := sample.NewSingleSample(newFile, newSheet, receiptText); err != nil {
 			fmt.Println("не удалось создать шаблон")
 		}
 		if err := newFile.SetCellValue(newSheet, dateCell, formatted); err != nil {
@@ -92,7 +100,7 @@ func fragmentationReceips(file, newFile *excelize.File, tariffCell string) error
 		}
 		return nil
 	case receipt.Duo != nil:
-		if err := sample.NewDuoSample(newFile, newSheet); err != nil {
+		if err := sample.NewDuoSample(newFile, newSheet, receiptText); err != nil {
 			fmt.Println("не удалось создать шаблон")
 		}
 		if err := newFile.SetCellValue(newSheet, dateCell, formatted); err != nil {

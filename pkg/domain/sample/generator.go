@@ -1,15 +1,17 @@
 package sample
 
 import (
-	"github.com/xuri/excelize/v2"
 	"strings"
+
+	"github.com/xuri/excelize/v2"
 )
 
-func NewSingleSample(f *excelize.File, sheet string) error {
+func NewSingleSample(f *excelize.File, sheet string, receiptText ReceiptText) error {
 	page, err := f.NewSheet(sheet)
 	if err != nil {
 		return err
 	}
+	headers := headersWithReceiptText(CalcSingleHeaders, receiptText)
 
 	f.SetActiveSheet(page)
 	// установка ширины ячеек
@@ -25,11 +27,11 @@ func NewSingleSample(f *excelize.File, sheet string) error {
 		return err
 	}
 	// обьединение ячеек
-	if err := mergeCells(f, CalcSingleHeaders, sheet); err != nil {
+	if err := mergeCells(f, headers, sheet); err != nil {
 		return err
 	}
 	// установка хедеров и подвала
-	if err := setHeaders(f, CalcSingleHeaders, sheet); err != nil {
+	if err := setHeaders(f, headers, sheet); err != nil {
 		return err
 	}
 	// установка области печати
@@ -50,11 +52,12 @@ func NewSingleSample(f *excelize.File, sheet string) error {
 	return nil
 }
 
-func NewDuoSample(f *excelize.File, sheet string) error {
+func NewDuoSample(f *excelize.File, sheet string, receiptText ReceiptText) error {
 	page, err := f.NewSheet(sheet)
 	if err != nil {
 		return err
 	}
+	headers := headersWithReceiptText(CalcDuoHeaders, receiptText)
 
 	f.SetActiveSheet(page)
 	// установка ширины ячеек
@@ -70,11 +73,11 @@ func NewDuoSample(f *excelize.File, sheet string) error {
 		return err
 	}
 	// обьединение ячеек
-	if err := mergeCells(f, CalcDuoHeaders, sheet); err != nil {
+	if err := mergeCells(f, headers, sheet); err != nil {
 		return err
 	}
 	// установка хедеров и подвала
-	if err := setHeaders(f, CalcDuoHeaders, sheet); err != nil {
+	if err := setHeaders(f, headers, sheet); err != nil {
 		return err
 	}
 	// установка области печати

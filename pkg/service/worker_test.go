@@ -69,6 +69,35 @@ func TestRun_GeneratesReceiptsWorkbook(t *testing.T) {
 	}
 	defer sourceFile.Close()
 
+	sourceReceiptCount, err := countReceipts(sourceFile)
+	if err != nil {
+		t.Fatalf("count source receipts: %v", err)
+	}
+	wantSheetCount := (sourceReceiptCount + 1) / 2
+	if len(sheets) != wantSheetCount {
+		t.Fatalf("generated workbook has %d sheets, want %d", len(sheets), wantSheetCount)
+	}
+
+	firstReceipt, err := readNextReceiptAtOffset(sourceFile, 0)
+	if err != nil {
+		t.Fatalf("read first source receipt: %v", err)
+	}
+	if firstReceipt == nil {
+		t.Fatal("source workbook has no first receipt")
+	}
+	secondReceipt, err := readNextReceiptAtOffset(sourceFile, firstReceipt.rows)
+	if err != nil {
+		t.Fatalf("read second source receipt: %v", err)
+	}
+	if secondReceipt == nil {
+		t.Fatal("source workbook has no second receipt")
+	}
+
+	wantFirstSheet := safeSheetName(receiptSheetName(firstReceipt.receipt, secondReceipt.receipt), map[string]int{})
+	if sheets[0] != wantFirstSheet {
+		t.Fatalf("first sheet name = %q, want %q", sheets[0], wantFirstSheet)
+	}
+
 	sourceHeader, err := sourceFile.GetCellValue("Архив", "B94")
 	if err != nil {
 		t.Fatalf("read source header: %v", err)
@@ -91,5 +120,47 @@ func TestRun_GeneratesReceiptsWorkbook(t *testing.T) {
 	}
 	if resultFooter != sourceFooter {
 		t.Fatal("generated footer does not match source archive footer")
+	}
+
+	secondPlaceNumber, err := resultFile.GetCellValue(sheets[0], "B22")
+	if err != nil {
+		t.Fatalf("read second generated receipt cell: %v", err)
+	}
+	if secondPlaceNumber != secondReceipt.receipt.PlaceNumber {
+		t.Fatalf("second generated place number = %q, want %q", secondPlaceNumber, secondReceipt.receipt.PlaceNumber)
+	}
+
+	secondHeader, err := resultFile.GetCellValue(sheets[0], "B16")
+	if err != nil {
+		t.Fatalf("read second generated header: %v", err)
+	}
+	if secondHeader != sourceHeader {
+		t.Fatalf("second generated header = %q, want %q", secondHeader, sourceHeader)
+	}
+
+	secondFooter, err := resultFile.GetCellValue(sheets[0], "B24")
+	if err != nil {
+		t.Fatalf("read second generated footer: %v", err)
+	}
+	if secondFooter != sourceFooter {
+		t.Fatal("second generated footer does not match source archive footer")
+	}
+}
+
+func countReceipts(file *excelize.File) (int, error) {
+	count := 0
+	rowOffset := 0
+
+	for {
+		next, err := readNextReceiptAtOffset(file, rowOffset)
+		if err != nil {
+			return 0, err
+		}
+		if next == nil {
+			return count, nil
+		}
+
+		count++
+		rowOffset += next.rows
 	}
 }
